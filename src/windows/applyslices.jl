@@ -2,6 +2,15 @@ const PAIRVEC = Pair{<:AbstractVector, <:AbstractVector}
 
 """
 $(TYPEDSIGNATURES)
+"""
+function applyslices!(f::Function, out::AbstractVector, v::AbstractVector, slices)
+	@inbounds for (i,slice)=enumerate(slices)
+		out[i] = f(view(v, slice))
+	end
+end
+
+"""
+$(TYPEDSIGNATURES)
 Apply `f` to slices over an arbitrary index with slice function `sf`.
 Constant window size of `τ`.
 """
@@ -9,9 +18,7 @@ function applyslices(f::Function, sf::Function, (idx,v)::PAIRVEC, τ; check=CHEC
 	check && @assert (issorted(idx) && size(idx, 1)==size(v,1))
 	slices = sf(idx, τ)
 	out = zeros(eltype(v), length(slices))
-	@inbounds for (i,slice)=enumerate(slices)
-		out[i] = f(view(v, slice))
-	end
+	applyslices!(f, out, v, slices)
 	out
 end
 
