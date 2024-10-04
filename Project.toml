@@ -1,8 +1,10 @@
 name = "MovingWindowsBase"
 uuid = "5a52037d-8d06-4c22-94c4-9106269760e0"
 authors = ["kpa28 <git@kevindirect.com>"]
-version = "0.1.2"
+version = "0.2.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
+MaxMinFilters = "be03bc56-bb7c-4dbf-b252-c57e9365e4bb"

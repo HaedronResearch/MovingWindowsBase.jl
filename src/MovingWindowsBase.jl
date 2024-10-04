@@ -1,11 +1,13 @@
 module MovingWindowsBase
 
 using Dates
+import MaxMinFilters
+using DispatchDoctor
 using DocStringExtensions: TYPEDSIGNATURES
 
 export regularity
 export roll
-export slide
+export slide, slidesum, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot, slidedot!, slidekdot!
 
 const CHECK = false
 
