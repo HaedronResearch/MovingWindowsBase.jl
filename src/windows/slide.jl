@@ -92,8 +92,8 @@ Optimized sliding mean for real numbers.
 """
 @stable function slidemean(v::AbstractVector{<:Real}, τ::Integer; kahan=true)
 	out = slidesum(v, τ; kahan=kahan)
-	out[1:τ] = view(out, 1:τ) ./ (1:τ)
-	out[τ+1:length(v)] = view(out, τ+1:length(v)) / τ
+	out[1:τ-1] ./= 1:τ-1
+	out[τ:length(v)] ./= τ
 	out
 end
 
@@ -140,7 +140,7 @@ First `length(w)-1` outputs are copied over from the input without a dot product
 @stable function slidedot!(out::AbstractVector, v::AbstractVector, w)
 	τ = length(w)
 	out[1:τ-1] = view(v, 1:τ-1) # copy over inputs without dot
-	out[τ] = sum(w .* view(v, 1:τ))
+	out[τ] = mapreduce(*, +, view(v, 1:τ), w)
 	@inbounds for i=τ+1:length(v)
 		out[i] = out[i-1] + w[end] * v[i] - w[begin] * v[i-τ]
 	end
