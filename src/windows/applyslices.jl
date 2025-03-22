@@ -2,11 +2,25 @@ const PAIRVEC = Pair{<:AbstractVector, <:AbstractVector}
 
 """
 $(TYPEDSIGNATURES)
+Apply `f` to each slice of `v` and assign result to `out`
 """
 @stable function applyslices!(f::Function, out::AbstractVector, v::AbstractVector, slices)
+	# map!(sl->f(view(v, sl)), out, slices) # a bit slower than for loop
 	@inbounds for (i,slice)=enumerate(slices)
 		out[i] = f(view(v, slice))
 	end
+	out
+end
+
+"""
+$(TYPEDSIGNATURES)
+Apply `f` to each slice of (`out`, `v`) and assign result to `out`
+"""
+@stable function applyslices2!(f::Function, out::AbstractVector, v::AbstractVector, slices)
+	@inbounds for (i,slice)=enumerate(slices)
+		out[i] = f(view(out, slice), view(v, slice))
+	end
+	out
 end
 
 """
@@ -19,7 +33,6 @@ Constant window size of `τ`.
 	slices = sf(idx, τ)
 	out = zeros(eltype(v), length(slices))
 	applyslices!(f, out, v, slices)
-	out
 end
 
 """

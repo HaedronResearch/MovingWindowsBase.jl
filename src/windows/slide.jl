@@ -36,7 +36,7 @@ end
 $(TYPEDSIGNATURES)
 Optimized uncorrected sliding sum for real numbers (in-place).
 """
-@stable function slidesum!(out::AbstractVector, v::AbstractVector{<:Real}, τ::Integer)
+@stable function slidesum!(out::AbstractVector, v::AbstractVector, τ::Integer)
 	cumsum!(view(out, 1:τ), view(v, 1:τ))
 	@inbounds for i=τ+1:length(v)
 		out[i] = out[i-1] + v[i] - v[i-τ]
@@ -82,7 +82,7 @@ $(TYPEDSIGNATURES)
 Optimized sliding sum for real numbers.
 Setting `kahan=true` (default) will use Kahan corrected summation for better accuracy at a speed penalty.
 """
-@stable function slidesum(v::AbstractVector{<:Real}, τ::Integer; kahan=true)
+@stable function slidesum(v::AbstractVector, τ::Integer; kahan=true)
 	kahan ? slideksum!(similar(v), v, τ) : slidesum!(similar(v), v, τ)
 end
 
@@ -90,7 +90,7 @@ end
 $(TYPEDSIGNATURES)
 Optimized sliding mean for real numbers.
 """
-@stable function slidemean(v::AbstractVector{<:Real}, τ::Integer; kahan=true)
+@stable function slidemean(v::AbstractVector, τ::Integer; kahan=true)
 	out = slidesum(v, τ; kahan=kahan)
 	out[1:τ-1] ./= 1:τ-1
 	out[τ:length(v)] ./= τ
@@ -134,39 +134,14 @@ Optimized sliding max min range from MaxMinFilters.jl.
 
 """
 $(TYPEDSIGNATURES)
-Optimized uncorrected sliding dot product, aka cross-correlation (in-place).
-First `length(w)-1` outputs are copied over from the input without a dot product.
+Sliding dot product, aka cross-correlation (in-place).
+All inputs are in ascending index order.
+First `length(w)-1` outputs are ignored, use `slidedot` for head copying version.
 """
 @stable function slidedot!(out::AbstractVector, v::AbstractVector, w)
 	τ = length(w)
-	out[1:τ-1] = view(v, 1:τ-1) # copy over inputs without dot
-	out[τ] = mapreduce(*, +, view(v, 1:τ), w)
-	@inbounds for i=τ+1:length(v)
-		out[i] = out[i-1] + w[end] * v[i] - w[begin] * v[i-τ]
-	end
-	out
-end
-
-"""
-$(TYPEDSIGNATURES)
-Optimized Kahan corrected sliding dot product, aka cross-correlation (in-place).
-This will give a more accurate result than `slidedot!` for a speed penalty.
-First `length(w)-1` outputs are copied over from the input without a dot product.
-"""
-@stable function slidekdot!(out::AbstractVector{T}, v::AbstractVector, w) where {T<:Real}
-	τ = length(w)
-	s, c = zero(T), zero(T) # (rolling dot, correction)
-
-	for i=1:τ
-		s, c = kahanup(w[i] * v[i], s, c)
-	end
-	out[1:τ-1] = view(v, 1:τ-1) # copy over inputs without dot
-	out[τ] = s
-
-	for i=τ+1:length(v)
-		s, c = kahanup(-w[begin] * v[i-τ], s, c)
-		s, c = kahanup(w[end] * v[i], s, c)
-		out[i] = s
+	@inbounds for i=τ:length(v)
+		out[i] = w ⋅ view(v, i-τ+1:i)
 	end
 	out
 end
@@ -174,9 +149,63 @@ end
 """
 $(TYPEDSIGNATURES)
 Sliding dot product, aka cross-correlation.
-First `length(w)-1` outputs are copied over from the input without a dot product.
-Setting `kahan=true` (default) will use Kahan correction for better accuracy at a speed penalty.
+Copies head from the input without modification.
 """
-@stable function slidedot(v::AbstractVector, w; kahan=true)
-	kahan ? slidekdot!(similar(v), v, w) : slidedot!(similar(v), v, w)
+@stable function slidedot(v::AbstractVector, w)
+	slidedot!(simheadcp(v, w), v, w)
+end
+
+"""
+$(TYPEDSIGNATURES)
+Ehlers Generalized Linear DSP Filter (in-place).
+
+## References
+* John Ehlers, Cycle Analytics for Traders, pp. 11
+"""
+@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple, wₒ::NTuple, (sᵢₗ, sᵢᵣ)::NTuple{2}, (sₒₗ, sₒᵣ)::NTuple{2}, τ::Integer)
+	@inbounds for t=τ:length(v)
+		out[t] = wᵢ ⋅ view(v, t+sᵢₗ:t+sᵢᵣ) + wₒ ⋅ view(out, t+sₒₗ:t+sₒᵣ)
+	end
+	out
+end
+
+"""
+$(TYPEDSIGNATURES)
+Ehlers Generalized Linear DSP Filter (in-place).
+
+Degree of two (`wₒ` like `(wₒ₂, wₒ₁, 0)` where wₒ₂>0, wₒ₁>0) is recommended by Ehlers for recursive filters.
+Last output weight (`wₒ[end]`) should usually be set to zero.
+
+Filter components are added instead of subtracted (as in the book) so that the filter weights in the indicator implementations exactly match Ehlers's code. Ehlers usually adds the components instead of subtracting when building filters even though in the provided reference he subtracts.
+
+Strips leading / trailing zeros from both kernels for efficiency.
+
+## References
+* John Ehlers, Cycle Analytics for Traders, pp. 11
+"""
+@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple{τ}, wₒ::NTuple{τ}) where {τ}
+	lᵢ, rᵢ = findfirst(!iszero, wᵢ), findlast(!iszero, wᵢ)
+	lₒ, rₒ = findfirst(!iszero, wₒ), findlast(!iszero, wₒ)
+	slidedsp!(out, v, wᵢ[lᵢ:rᵢ], wₒ[lₒ:rₒ], (lᵢ-τ, rᵢ-τ), (lₒ-τ, rₒ-τ), τ)
+end
+
+@stable function slidedsp!(::AbstractVector, ::AbstractVector, ::Tuple, ::Tuple)
+	throw(DimensionMismatch("make sure wᵢ and wₒ are the same size"))
+end
+
+"""
+$(TYPEDSIGNATURES)
+Ehlers Generalized Linear DSP Filter (in-place).
+"""
+@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ, wₒ)
+	slidedsp!(out, v, Tuple(wᵢ), Tuple(wₒ))
+end
+
+"""
+$(TYPEDSIGNATURES)
+Ehlers Generalized Linear DSP Filter.
+Copies head from the input without modification.
+"""
+@stable function slidedsp(v::AbstractVector, wᵢ, wₒ)
+	slidedsp!(simheadcp(v, wᵢ), v, wᵢ, wₒ)
 end

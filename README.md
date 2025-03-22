@@ -28,7 +28,8 @@ Optimized sliding window function examples:
 * `slidemean`: optimized sliding mean, Kahan corrected by default.
 * `slidemin`: optimized sliding minimum, this just wraps sairus7's MaxMinFilters.movmin for convenience
 * `slidemax`: optimized sliding maximum, this just wraps sairus7's MaxMinFilters.movmax for convenience
-* `slidedot`: optimized sliding dot product, Kahan corrected by default. First `w-1` values are passed through without a dot product.
+* `slidedot`: sliding dot product (cross-correlation)
+* `slidedsp`: sliding linear digital signal processing filter (from John Ehlers); `slidedot` with a recursive term
 
 You can always use the unoptimized versions of these via `slide(sum, ...)`, `slide(maximum, ...)`, and so on.
 
@@ -36,4 +37,5 @@ You can always use the unoptimized versions of these via `slide(sum, ...)`, `sli
 * `regularity`: check the completeness of a `TimeType` vector at some minimum periodicity
 
 ## Acknowledgements
-Credit for `slidemin`, `slidemax`, and `sliderange` goes to sairus7's excellent [MaxMinFilters.jl](https://github.com/sairus7/MaxMinFilters.jl) package. I decided to wrap these for my own convenience because they were already quite fast.
+* Credit for `slidemin`, `slidemax`, and `sliderange` goes to sairus7's excellent [MaxMinFilters.jl](https://github.com/sairus7/MaxMinFilters.jl) package. I decided to wrap these for my own convenience because they were already quite fast.
+* The `slidedsp` function comes from the books by John Ehlers.

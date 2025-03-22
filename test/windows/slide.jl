@@ -42,3 +42,53 @@ end
 		@test slidefn == map(v->sum(v.^2), [1:1, 1:2, 1:3, 1:4, 2:5, 3:6, 4:7])
 	end
 end
+
+@testset "slidedot" begin
+	let sz=7,x=collect(1:sz)
+		let w=(1,-2) 
+			wx1 = x[1:end-1] * w[1] 
+			wx2 = x[2:end-0] * w[2]
+			wx = vcat(x[1], wx1 + wx2)
+			@test slidedot(x, w) == wx
+		end
+		let w=(-3,1,0)
+			wx1 = x[1:end-2] * w[1] 
+			wx2 = x[2:end-1] * w[2] 
+			wx3 = x[3:end-0] * w[3]
+			wx = vcat(x[1:2], wx1 + wx2 + wx3)
+			@test slidedot(x, w) == wx
+		end
+	end
+end
+
+@testset "slidedsp" begin
+	let sz=4,x=collect(1:sz)
+		let w=(1,2),wo=(1,0)
+			out=[1,0,0,0]
+			out[2] = w[1]*x[1] + w[2]*x[2] + wo[1] * out[1] + wo[2] * out[2]
+			out[3] = w[1]*x[2] + w[2]*x[3] + wo[1] * out[2] + wo[2] * out[3]
+			out[4] = w[1]*x[3] + w[2]*x[4] + wo[1] * out[3] + wo[2] * out[4]
+			@test slidedsp(x, w, wo) == out
+		end
+		let w=(-1,0,3),wo=(1,-1,0)
+			out=[1,2,0,0]
+			out[3] = w[1]*x[1] + w[2]*x[2] + w[3]*x[3] +
+					wo[1]*out[1] + wo[2]*out[2] + wo[3]*out[3]
+			out[4] = w[1]*x[2] + w[2]*x[3] + w[3]*x[4] +
+					wo[1]*out[2] + wo[2]*out[3] + wo[3]*out[4]
+			@test slidedsp(x, w, wo) == out
+		end
+		let w=(-1,0,3),wo=(1,-1,0)
+			out = zeros(Int, sz)
+			out[3] = w[1]*x[1] + w[2]*x[2] + w[3]*x[3] +
+					wo[1]*out[1] + wo[2]*out[2] + wo[3]*out[3]
+			out[4] = w[1]*x[2] + w[2]*x[3] + w[3]*x[4] +
+					wo[1]*out[2] + wo[2]*out[3] + wo[3]*out[4]
+			out[1] = 0
+			out[2] = 0
+			inp = zeros(Int, sz)
+			@test slidedsp!(inp, x, w, wo) == out
+		end
+		@test_throws DimensionMismatch slidedsp(x, (1,3,4), (1,0))
+	end
+end
