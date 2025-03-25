@@ -7,8 +7,8 @@ using DispatchDoctor
 using DocStringExtensions: TYPEDSIGNATURES
 
 export regularity
-export roll
-export slide, slidesum, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot!, slidedot, slidedsp!, slidedsp
+export roll!, roll
+export slide!, slide, slidesum!, slidesum, slidemean!, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot!, slidedot, slidedsp!, slidedsp
 
 const CHECK = false
 

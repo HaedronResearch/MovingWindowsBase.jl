@@ -1,4 +1,10 @@
 """
+Returns a generator of rolling window slices over an index.
+Begins at the first full window size of `τ`.
+"""
+function rollslices end
+
+"""
 $(TYPEDSIGNATURES)
 Slices for an integer-length rolling window over an integer index.
 """
@@ -18,6 +24,10 @@ end
 """
 $(TYPEDSIGNATURES)
 Slices for a `Period` rolling window over a TimeType index.
+Allows running a constant time rolling window over an irregular time series index.
+
+It's much more efficient to use the integer `τ` version when you know your time index
+is sampled at a consistent time period.
 """
 @stable function rollslices(idx::AbstractVector{<:TimeType}, τ::Period)
 	fst = searchsortedfirst(idx, first(idx) + τ)
@@ -29,8 +39,16 @@ end
 
 """
 $(TYPEDSIGNATURES)
+Map `f` to rolling window, constant window size of `τ` (in-place).
+"""
+@stable function roll!(f::Function, out::AbstractVector, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
+	applyslices!(rollslices, f, out, v, τ; check=check)
+end
+
+"""
+$(TYPEDSIGNATURES)
 Map `f` to rolling window, constant window size of `τ`.
 """
-@stable function roll(f::Function, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check=CHECK)
-	applyslices(f, rollslices, v, τ; check=check)
+@stable function roll(f::Function, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
+	applyslices(rollslices, f, v, τ; check=check)
 end

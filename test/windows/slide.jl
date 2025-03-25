@@ -19,7 +19,7 @@ end
 
 @testset "slide:Int index (explicit),no gaps" begin
 	let sz=7, idx=collect(1:sz), w=3
-		slidefn = slide(sum, idx=>idx.^2, w)
+		slidefn = slide(sum, idx=>idx.^2, w; check=TESTCHECK)
 		@test length(slidefn) == length(idx)
 		@test slidefn == map(v->sum(v.^2), [1:1, 1:2, 1:3, 2:4, 3:5, 4:6, 5:7])
 	end
@@ -27,7 +27,7 @@ end
 
 @testset "slide:Int index (implicit),no gaps" begin
 	let sz=7, idx=collect(1:sz), w=3
-		slidefn = slide(sum, idx.^2, w)
+		slidefn = slide(sum, idx.^2, w; check=TESTCHECK)
 		@test length(slidefn) == length(idx)
 		@test slidefn == map(v->sum(v.^2), [1:1, 1:2, 1:3, 2:4, 3:5, 4:6, 5:7])
 	end
@@ -36,14 +36,35 @@ end
 @testset "slide:DateTime index,no gaps" begin
 	let st=DateTime(2020), freq=Minute(1), sz=7, idx=st:freq:st+(sz-1)*freq, w=4, wf=(w-1)*freq
 		v = collect(1:sz)
-		slidefn = slide(sum, idx=>v.^2, wf)
+		slidefn = slide(sum, idx=>v.^2, wf; check=TESTCHECK)
 
 		@test length(slidefn) == length(idx)
 		@test slidefn == map(v->sum(v.^2), [1:1, 1:2, 1:3, 1:4, 2:5, 3:6, 4:7])
 	end
 end
 
-@testset "slidedot" begin
+@testset "slidesum:Int index (implicit),no gaps" begin
+	let sz=7, idx=collect(1:sz), w=3
+		inp = idx.^2
+		slidefn = slidesum(inp, w; check=TESTCHECK)
+		output = map(v->sum(v.^2), [1:1, 1:2, 1:3, 2:4, 3:5, 4:6, 5:7])
+		@test slidefn == output
+	end
+end
+
+@testset "slidemean:Int index (implicit),no gaps" begin
+	let sz=7, idx=collect(1:sz), w=3
+		inp = map(float, idx.^2)
+		slidefn = slidemean(inp, w; check=TESTCHECK)
+		output = map(v->sum(float, v.^2), [1:1, 1:2, 1:3, 2:4, 3:5, 4:6, 5:7])
+		for i=eachindex(output)
+			output[i] = ifelse(i<w, output[i]/i, output[i]/w)
+		end
+		@test slidefn == output
+	end
+end
+
+@testset "slidedot:Int index (implicit),no gaps" begin
 	let sz=7,x=collect(1:sz)
 		let w=(1,-2) 
 			wx1 = x[1:end-1] * w[1] 
@@ -61,7 +82,7 @@ end
 	end
 end
 
-@testset "slidedsp" begin
+@testset "slidedsp:Int index (implicit),no gaps" begin
 	let sz=4,x=collect(1:sz)
 		let w=(1,2),wo=(1,0)
 			out=[1,0,0,0]
