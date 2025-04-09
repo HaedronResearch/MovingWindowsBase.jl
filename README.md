@@ -1,5 +1,7 @@
 # MovingWindowsBase.jl
 
+[![DispatchDoctor](https://img.shields.io/badge/%F0%9F%A9%BA_tested_with-DispatchDoctor.jl-blue?labelColor=white)](https://github.com/MilesCranmer/DispatchDoctor.jl)
+
 This small package defines some implicit and `TimeType`-based moving window functions.
 
 The methods here are intended to be simple and fast for `AbstractVector`, but the broader purpose is to define functions that we can later define even richer methods for (ie for richer data structures like from `TimeBars.jl`) in later pacakges. 
