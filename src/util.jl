@@ -33,7 +33,7 @@ end
 $(TYPEDSIGNATURES)
 Return a similar vector with first `hd` values copied over.
 """
-@stable function simheadcp(v::AbstractVector, hd::Integer=1)
+function simheadcp(v::AbstractVector, hd::Integer=1)
 	slicecp!(similar(v), v, 1:hd)
 end
 
@@ -41,7 +41,7 @@ end
 $(TYPEDSIGNATURES)
 Return a similar vector with first `hd` zeroed.
 """
-@stable function simhead0(v::AbstractVector{T}, hd::Integer=1) where {T<:Real}
+function simhead0(v::AbstractVector{T}, hd::Integer=1) where {T<:Real}
 	slice0!(similar(v), 1:hd)
 end
 

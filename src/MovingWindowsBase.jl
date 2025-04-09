@@ -12,6 +12,8 @@ export slide!, slide, slidesum!, slidesum, slidemean!, slidemean, slidemax, slid
 
 const CHECK = false
 
+@stable default_mode="disable" begin
+
 include("util.jl")
 
 include("tools/regularity.jl")
@@ -19,5 +21,7 @@ include("tools/regularity.jl")
 include("windows/applyslices.jl")
 include("windows/roll.jl")
 include("windows/slide.jl")
+
+end
 
 end

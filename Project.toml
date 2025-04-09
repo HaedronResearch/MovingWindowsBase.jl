@@ -1,7 +1,7 @@
 name = "MovingWindowsBase"
 uuid = "5a52037d-8d06-4c22-94c4-9106269760e0"
 authors = ["kpa28 <git@kevindirect.com>"]
-version = "0.3.1"
+version = "0.3.2"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"

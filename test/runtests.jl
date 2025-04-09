@@ -1,5 +1,9 @@
 using Test
 using Dates
+using Preferences: set_preferences!
+
+set_preferences!("MovingWindowsBase", "dispatch_doctor_mode" => "error")
+
 using MovingWindowsBase
 import MovingWindowsBase: rollslices, slideslices
 

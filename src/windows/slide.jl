@@ -8,7 +8,7 @@ function slideslices end
 $(TYPEDSIGNATURES)
 Slices for an integer-length sliding window over an integer index.
 """
-@stable function slideslices(idx::AbstractVector{<:Integer}, τ::Integer)
+function slideslices(idx::AbstractVector{<:Integer}, τ::Integer)
 	@inbounds (max(i-τ+1,first(idx)):i for i=idx)
 end
 
@@ -17,7 +17,7 @@ $(TYPEDSIGNATURES)
 Slices for an integer-length sliding window over a TimeType index.
 Converts the index to an integer implicit index via `eachindex`.
 """
-@stable function slideslices(idx::AbstractVector{<:TimeType}, τ::Integer)
+function slideslices(idx::AbstractVector{<:TimeType}, τ::Integer)
 	slideslices(eachindex(idx), τ)
 end
 
@@ -29,7 +29,7 @@ Allows running a constant time sliding window over an irregular time series inde
 It's much more efficient to use the integer `τ` version when you know your time index
 is sampled at a consistent time period.
 """
-@stable function slideslices(idx::AbstractVector{<:TimeType}, τ::Period)
+function slideslices(idx::AbstractVector{<:TimeType}, τ::Period)
 	@inbounds (searchsortedfirst((@view idx[begin:i]), val-τ):i for (i,val)=pairs(idx))
 end
 
@@ -37,7 +37,7 @@ end
 $(TYPEDSIGNATURES)
 Sliding window over an arbitrary index (in-place).
 """
-@stable function slide!(f::Function, out::AbstractVector, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
+function slide!(f::Function, out::AbstractVector, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
 	check && (@assert length(out) == length(_getdata(v)))
 	applyslices!(slideslices, f, out, v, τ; check=check)
 end
@@ -46,7 +46,7 @@ end
 $(TYPEDSIGNATURES)
 Sliding window over an arbitrary index.
 """
-@stable function slide(f::Function, v::Union{<:PAIRVEC{<:T}, <:AbstractVector{<:T}}, τ; check::Bool=CHECK) where {T}
+function slide(f::Function, v::Union{<:PAIRVEC{<:T}, <:AbstractVector{<:T}}, τ; check::Bool=CHECK) where {T}
 	out = Vector{T}(undef, length(_getdata(v)))
 	slide!(f, out, v, τ; check=check)
 end
@@ -55,7 +55,7 @@ end
 $(TYPEDSIGNATURES)
 Optimized uncorrected sliding sum for real numbers (in-place).
 """
-@stable function slidesumu!(out::AbstractVector, v::AbstractVector, τ::Integer)
+function slidesumu!(out::AbstractVector, v::AbstractVector, τ::Integer)
 	cumsum!(view(out, 1:τ), view(v, 1:τ))
 	@inbounds for i=τ+1:length(v)
 		out[i] = out[i-1] + v[i] - v[i-τ]
@@ -67,7 +67,7 @@ end
 $(TYPEDSIGNATURES)
 Kahan sum update logic
 """
-@stable @inline function kahanup(x, s, c)
+@inline function kahanup(x, s, c)
 	y = x - c
 	t = s + y
 	c = (t - s) - y
@@ -80,7 +80,7 @@ $(TYPEDSIGNATURES)
 Optimized Kahan corrected sliding sum for real numbers (in-place).
 This will give a more accurate result than `slidesumu!` for a speed penalty.
 """
-@stable function slidesumk!(out::AbstractVector, v::AbstractVector{T}, τ::Integer) where {T<:Real}
+function slidesumk!(out::AbstractVector, v::AbstractVector{T}, τ::Integer) where {T<:Real}
 	s, c = zero(T), zero(T) # (rolling sum, correction)
 
 	for i=1:τ
@@ -101,7 +101,7 @@ $(TYPEDSIGNATURES)
 Optimized sliding sum for real numbers (in-place).
 Setting `kahan=true` (default) will use Kahan corrected summation for better accuracy at a small speed penalty.
 """
-@stable function slidesum!(out::AbstractVector, v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
+function slidesum!(out::AbstractVector, v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
 	check && (@assert length(out) == length(_getdata(v)))
 	kahan ? slidesumk!(out, v, τ) : slidesumu!(out, v, τ)
 end
@@ -111,7 +111,7 @@ $(TYPEDSIGNATURES)
 Optimized sliding sum for real numbers.
 Setting `kahan=true` (default) will use Kahan corrected summation for better accuracy at a small speed penalty.
 """
-@stable function slidesum(v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
+function slidesum(v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
 	slidesum!(similar(v), v, τ; kahan=kahan, check=check)
 end
 
@@ -119,7 +119,7 @@ end
 $(TYPEDSIGNATURES)
 Optimized sliding mean for real numbers (in-place).
 """
-@stable function slidemean!(out::AbstractVector, v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
+function slidemean!(out::AbstractVector, v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
 	slidesum!(out, v, τ; kahan=kahan, check=check)
 	out[1:τ-1] ./= 1:τ-1
 	out[τ:length(v)] ./= τ
@@ -130,7 +130,7 @@ end
 $(TYPEDSIGNATURES)
 Optimized sliding mean for real numbers.
 """
-@stable function slidemean(v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
+function slidemean(v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
 	slidemean!(similar(v), v, τ; kahan=kahan, check=check)
 end
 
@@ -141,7 +141,7 @@ end
 # ## References
 # * [Algorithms for Calculating Variance: Two-Pass Algorithm](https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Two-pass_algorithm)
 # """
-# @stable function slidestd(v::AbstractVector{<:Real}, τ::Integer; kahan=true)
+# function slidestd(v::AbstractVector{<:Real}, τ::Integer; kahan=true)
 # 	# x̄ = slidemean(v, τ; kahan=kahan)
 # end
 
@@ -149,25 +149,25 @@ end
 $(TYPEDSIGNATURES)
 Optimized sliding maximum from MaxMinFilters.jl.
 """
-@stable slidemax(v::AbstractVector, τ::Integer) = MaxMinFilters.movmax(v, τ)
+slidemax(v::AbstractVector, τ::Integer) = MaxMinFilters.movmax(v, τ)
 
 """
 $(TYPEDSIGNATURES)
 Optimized sliding minimum from MaxMinFilters.jl.
 """
-@stable slidemin(v::AbstractVector, τ::Integer) = MaxMinFilters.movmin(v, τ)
+slidemin(v::AbstractVector, τ::Integer) = MaxMinFilters.movmin(v, τ)
 
 """
 $(TYPEDSIGNATURES)
 Optimized sliding (maximum, minimum) from MaxMinFilters.jl.
 """
-@stable slidemaxmin(v::AbstractVector, τ::Integer) = MaxMinFilters.movmaxmin(v, τ)
+slidemaxmin(v::AbstractVector, τ::Integer) = MaxMinFilters.movmaxmin(v, τ)
 
 """
 $(TYPEDSIGNATURES)
 Optimized sliding max min range from MaxMinFilters.jl.
 """
-@stable sliderange(v::AbstractVector, τ::Integer) = MaxMinFilters.movrange(v, τ)
+sliderange(v::AbstractVector, τ::Integer) = MaxMinFilters.movrange(v, τ)
 
 """
 $(TYPEDSIGNATURES)
@@ -175,7 +175,7 @@ Sliding dot product, aka cross-correlation (in-place).
 All inputs are in ascending index order.
 First `length(w)-1` outputs are uninitialized, use `slidedot` for input head copying version.
 """
-@stable function slidedot!(out::AbstractVector, v::AbstractVector, w)
+function slidedot!(out::AbstractVector, v::AbstractVector, w)
 	τ = length(w)
 	@inbounds for i=τ:length(v)
 		out[i] = w ⋅ view(v, i-τ+1:i)
@@ -188,7 +188,7 @@ $(TYPEDSIGNATURES)
 Sliding dot product, aka cross-correlation.
 Copies head from the input without modification.
 """
-@stable function slidedot(v::AbstractVector, w)
+function slidedot(v::AbstractVector, w)
 	slidedot!(simheadcp(v, w), v, w)
 end
 
@@ -199,7 +199,7 @@ Ehlers Generalized Linear DSP Filter (in-place).
 ## References
 * John Ehlers, Cycle Analytics for Traders, pp. 11
 """
-@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple, wₒ::NTuple, (sᵢₗ, sᵢᵣ)::NTuple{2}, (sₒₗ, sₒᵣ)::NTuple{2}, τ::Integer)
+function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple, wₒ::NTuple, (sᵢₗ, sᵢᵣ)::NTuple{2}, (sₒₗ, sₒᵣ)::NTuple{2}, τ::Integer)
 	@inbounds for t=τ:length(v)
 		out[t] = wᵢ ⋅ view(v, t+sᵢₗ:t+sᵢᵣ) + wₒ ⋅ view(out, t+sₒₗ:t+sₒᵣ)
 	end
@@ -220,13 +220,13 @@ Strips leading / trailing zeros from both kernels for efficiency.
 ## References
 * John Ehlers, Cycle Analytics for Traders, pp. 11
 """
-@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple{τ}, wₒ::NTuple{τ}) where {τ}
+function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple{τ}, wₒ::NTuple{τ}) where {τ}
 	lᵢ, rᵢ = findfirst(!iszero, wᵢ), findlast(!iszero, wᵢ)
 	lₒ, rₒ = findfirst(!iszero, wₒ), findlast(!iszero, wₒ)
 	slidedsp!(out, v, wᵢ[lᵢ:rᵢ], wₒ[lₒ:rₒ], (lᵢ-τ, rᵢ-τ), (lₒ-τ, rₒ-τ), τ)
 end
 
-@stable function slidedsp!(::AbstractVector, ::AbstractVector, ::Tuple, ::Tuple)
+function slidedsp!(::AbstractVector, ::AbstractVector, ::Tuple, ::Tuple)
 	throw(DimensionMismatch("make sure wᵢ and wₒ are the same size"))
 end
 
@@ -235,7 +235,7 @@ $(TYPEDSIGNATURES)
 Ehlers Generalized Linear DSP Filter (in-place).
 First `length(wᵢ)-1` outputs are uninitialized, use `slidedsp` for input head copying version.
 """
-@stable function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ, wₒ)
+function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ, wₒ)
 	slidedsp!(out, v, Tuple(wᵢ), Tuple(wₒ))
 end
 
@@ -244,6 +244,6 @@ $(TYPEDSIGNATURES)
 Ehlers Generalized Linear DSP Filter.
 Copies head from the input without modification.
 """
-@stable function slidedsp(v::AbstractVector, wᵢ, wₒ)
+function slidedsp(v::AbstractVector, wᵢ, wₒ)
 	slidedsp!(simheadcp(v, wᵢ), v, wᵢ, wₒ)
 end
