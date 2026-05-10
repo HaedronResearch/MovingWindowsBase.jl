@@ -41,14 +41,28 @@ end
 $(TYPEDSIGNATURES)
 Map `f` to rolling window, constant window size of `τ` (in-place).
 """
-function roll!(f::Function, out::AbstractVector, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
-	applyslices!(rollslices, f, out, v, τ; check=check)
+function roll!(f::Function, out::AbstractVector, v, τ; check::Bool=CHECK)
+	applyslices!(rollslices, f, out, _getindex(v), τ, _getdata(v); check=check)
+end
+
+"""
+$(TYPEDSIGNATURES)
+"""
+function roll!(f::Function, out::AbstractVector, τ, v::AbstractVector...; check::Bool=CHECK)
+	applyslices!(rollslices, f, out, τ, v...; check=check)
 end
 
 """
 $(TYPEDSIGNATURES)
 Map `f` to rolling window, constant window size of `τ`.
 """
-function roll(f::Function, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
-	applyslices(rollslices, f, v, τ; check=check)
+function roll(f::Function, v, τ; check::Bool=CHECK)
+	applyslices(rollslices, f, _getindex(v), τ, _getdata(v); check=check)
+end
+
+"""
+$(TYPEDSIGNATURES)
+"""
+function roll(f::Function, τ, v::AbstractVector...; check::Bool=CHECK)
+	applyslices(rollslices, f, τ, v...; check=check)
 end

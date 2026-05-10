@@ -35,20 +35,39 @@ end
 
 """
 $(TYPEDSIGNATURES)
-Sliding window over an arbitrary index (in-place).
+Map `f` to sliding window, constant window size of `τ` (in-place).
 """
-function slide!(f::Function, out::AbstractVector, v::Union{<:PAIRVEC, <:AbstractVector}, τ; check::Bool=CHECK)
-	check && (@assert length(out) == length(_getdata(v)))
-	applyslices!(slideslices, f, out, v, τ; check=check)
+function slide!(f::Function, out::AbstractVector, v, τ; check::Bool=CHECK)
+	check && @assert length(out) == length(_getdata(v))
+	applyslices!(slideslices, f, out, _getindex(v), τ, _getdata(v); check=check)
+end
+
+"""
+$(TYPEDSIGNATURES)
+"""
+function slide!(f::Function, out::AbstractVector, τ, v::AbstractVector...; check::Bool=CHECK)
+	check && @assert all(length(out) == length(u) for u in v)
+	applyslices!(slideslices, f, out, τ, v...; check=check)
 end
 
 """
 $(TYPEDSIGNATURES)
 Sliding window over an arbitrary index.
 """
-function slide(f::Function, v::Union{<:PAIRVEC{<:T}, <:AbstractVector{<:T}}, τ; check::Bool=CHECK) where {T}
-	out = Vector{T}(undef, length(_getdata(v)))
-	slide!(f, out, v, τ; check=check)
+function slide(f::Function, v, τ; check::Bool=CHECK)
+	out = applyslices(slideslices, f, _getindex(v), τ, _getdata(v); check=check)
+	check && @assert length(out) == length(_getdata(v))
+	out
+end
+
+"""
+$(TYPEDSIGNATURES)
+Sliding window over an arbitrary index.
+"""
+function slide(f::Function, τ, v::AbstractVector...; check::Bool=CHECK)
+	out = applyslices(slideslices, f, τ, v...; check=check)
+	check && @assert all(length(out) == length(u) for u in v)
+	out
 end
 
 """
@@ -57,8 +76,8 @@ Optimized uncorrected sliding sum for real numbers (in-place).
 """
 function slidesumu!(out::AbstractVector, v::AbstractVector, τ::Integer)
 	cumsum!(view(out, 1:τ), view(v, 1:τ))
-	@inbounds for i=τ+1:length(v)
-		out[i] = out[i-1] + v[i] - v[i-τ]
+	for i=τ+1:length(v)
+		@inbounds out[i] = out[i-1] + v[i] - v[i-τ]
 	end
 	out
 end
@@ -85,13 +104,13 @@ function slidesumk!(out::AbstractVector, v::AbstractVector{T}, τ::Integer) wher
 
 	for i=1:τ
 		s, c = kahanup(v[i], s, c)
-		out[i] = s
+		@inbounds out[i] = s
 	end
 
 	for i=τ+1:length(v)
 		s, c = kahanup(-v[i-τ], s, c)
 		s, c = kahanup(v[i], s, c)
-		out[i] = s
+		@inbounds out[i] = s
 	end
 	out
 end
@@ -177,8 +196,8 @@ First `length(w)-1` outputs are uninitialized, use `slidedot` for input head cop
 """
 function slidedot!(out::AbstractVector, v::AbstractVector, w)
 	τ = length(w)
-	@inbounds for i=τ:length(v)
-		out[i] = w ⋅ view(v, i-τ+1:i)
+	for i=τ:length(v)
+		@inbounds out[i] = w ⋅ view(v, i-τ+1:i)
 	end
 	out
 end
@@ -200,8 +219,8 @@ Ehlers Generalized Linear DSP Filter (in-place).
 * John Ehlers, Cycle Analytics for Traders, pp. 11
 """
 function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple, wₒ::NTuple, (sᵢₗ, sᵢᵣ)::NTuple{2}, (sₒₗ, sₒᵣ)::NTuple{2}, τ::Integer)
-	@inbounds for t=τ:length(v)
-		out[t] = wᵢ ⋅ view(v, t+sᵢₗ:t+sᵢᵣ) + wₒ ⋅ view(out, t+sₒₗ:t+sₒᵣ)
+	for t=τ:length(v)
+		@inbounds out[t] = wᵢ ⋅ view(v, t+sᵢₗ:t+sᵢᵣ) + wₒ ⋅ view(out, t+sₒₗ:t+sₒᵣ)
 	end
 	out
 end

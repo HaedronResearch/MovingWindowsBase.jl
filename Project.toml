@@ -9,3 +9,9 @@ DispatchDoctor = "8d63f2c5-f18a-4cf2-ba9d-b3f60fc568c8"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MaxMinFilters = "be03bc56-bb7c-4dbf-b252-c57e9365e4bb"
+
+[weakdeps]
+TimeBars = "a2607882-149d-4a04-8ee4-d97a19d2799b"
+
+[extensions]
+TimeBarsExt = "TimeBars"
