@@ -9,7 +9,7 @@ using DocStringExtensions: TYPEDSIGNATURES
 export slicecp!, slicezero!, simheadcp, simheadzero
 export regularity
 export roll!, roll
-export slide!, slide, slidesum!, slidesum, slidemean!, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot!, slidedot, slidedsp!, slidedsp
+export slide!, slide, slidesum!, slidesum, slidemean!, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot!, slidedot, slidedotsym!, slidedotsym, slidedsp!, slidedsp
 
 const CHECK = false
 

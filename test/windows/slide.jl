@@ -82,6 +82,27 @@ end
 	end
 end
 
+@testset "slidedotsym:Int index (implicit),no gaps" begin
+	let x=collect(1.:10.)
+		let w=(1.,2.,1.) 
+			out = slidedotsym(x, w)
+			@test out[01] ≈ (1*2 + 2*1)/sum(w[2:3])   # left edge
+			@test out[02] ≈ (1*1 + 2*2 + 3*1)/sum(w)  # left
+			@test out[05] ≈ (4*1 + 5*2 + 6*1)/sum(w)  # middle
+			@test out[09] ≈ (8*1 + 9*2 + 10*1)/sum(w) # right
+			@test out[10] ≈ (9*1 + 10*2)/sum(w[1:2])  # right edge
+		end
+		let w=(1.,4.,6.,4.,1.)
+			out = slidedotsym(x, w)
+			@test out[01] ≈ (1*6 + 2*4 + 3*1)/sum(w[3:5])        # left edge
+			@test out[02] ≈ (1*4 + 2*6 + 3*4 + 4*1)/sum(w[2:5])  # left edge
+			@test out[05] ≈ (3*1 + 4*4 + 5*6 + 6*4 + 7*1)/sum(w) # middle
+			@test out[09] ≈ (7*1 + 8*4 + 9*6 + 10*4)/sum(w[1:4]) # right edge
+			@test out[10] ≈ (8*1 + 9*4 + 10*6)/sum(w[1:3])       # right edge
+		end
+	end
+end
+
 @testset "slidedsp:Int index (implicit),no gaps" begin
 	let sz=4,x=collect(1:sz)
 		let w=(1,2),wo=(1,0)

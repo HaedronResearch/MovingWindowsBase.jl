@@ -76,7 +76,7 @@ Optimized uncorrected sliding sum for real numbers (in-place).
 """
 function slidesumu!(out::AbstractVector, v::AbstractVector, τ::Integer)
 	cumsum!(view(out, 1:τ), view(v, 1:τ))
-	for i=τ+1:length(v)
+	for i=τ+1:lastindex(v)
 		@inbounds out[i] = out[i-1] + v[i] - v[i-τ]
 	end
 	out
@@ -107,7 +107,7 @@ function slidesumk!(out::AbstractVector, v::AbstractVector{T}, τ::Integer) wher
 		@inbounds out[i] = s
 	end
 
-	for i=τ+1:length(v)
+	for i=τ+1:lastindex(v)
 		s, c = kahanup(-v[i-τ], s, c)
 		s, c = kahanup(v[i], s, c)
 		@inbounds out[i] = s
@@ -141,7 +141,7 @@ Optimized sliding mean for real numbers (in-place).
 function slidemean!(out::AbstractVector, v::AbstractVector, τ::Integer; kahan=true, check::Bool=CHECK)
 	slidesum!(out, v, τ; kahan=kahan, check=check)
 	out[1:τ-1] ./= 1:τ-1
-	out[τ:length(v)] ./= τ
+	out[τ:lastindex(v)] ./= τ
 	out
 end
 
@@ -196,7 +196,7 @@ First `length(w)-1` outputs are uninitialized, use `slidedot` for input head cop
 """
 function slidedot!(out::AbstractVector, v::AbstractVector, w)
 	τ = length(w)
-	for i=τ:length(v)
+	for i=τ:lastindex(v)
 		@inbounds out[i] = w ⋅ view(v, i-τ+1:i)
 	end
 	out
@@ -213,13 +213,53 @@ end
 
 """
 $(TYPEDSIGNATURES)
+Symmetric normalized sliding dot product (in-place).
+Edges are computed by truncating the kernel.
+"""
+function slidedotsym!(out::AbstractVector, v::AbstractVector, w)
+	τ = length(w)
+	h = τ ÷ 2
+	@assert isodd(τ) && τ > 1
+
+	# left edge:
+	for i=1:h
+		local wᵢ = w[h-i+2:τ]
+		@inbounds out[i] = (wᵢ ⋅ view(v, 1:i+h)) / sum(wᵢ)
+	end
+
+	n = length(out)
+	# right edge:
+	for i in (n - h + 1):n
+		local wᵢ = w[1:τ - (h - (n - i))]
+		@inbounds out[i] = (wᵢ ⋅ view(v, i-h:n)) / sum(wᵢ)
+	end
+
+	div = sum(w)
+	for i=(h+1):n-h
+		@inbounds out[i] = (w ⋅ view(v, i-h:i+h)) / div
+	end
+	out
+end
+
+"""
+$(TYPEDSIGNATURES)
+Symmetric normalized sliding dot product.
+Edges are computed by truncating the kernel.
+Can be good for smoothing non time series data.
+"""
+function slidedotsym(v::AbstractVector, w)
+	slidedotsym!(similar(v), v, w)
+end
+
+"""
+$(TYPEDSIGNATURES)
 Ehlers Generalized Linear DSP Filter (in-place).
 
 ## References
 * John Ehlers, Cycle Analytics for Traders, pp. 11
 """
 function slidedsp!(out::AbstractVector, v::AbstractVector, wᵢ::NTuple, wₒ::NTuple, (sᵢₗ, sᵢᵣ)::NTuple{2}, (sₒₗ, sₒᵣ)::NTuple{2}, τ::Integer)
-	for t=τ:length(v)
+	for t=τ:lastindex(v)
 		@inbounds out[t] = wᵢ ⋅ view(v, t+sᵢₗ:t+sᵢᵣ) + wₒ ⋅ view(out, t+sₒₗ:t+sₒᵣ)
 	end
 	out
