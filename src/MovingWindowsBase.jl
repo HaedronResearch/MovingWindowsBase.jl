@@ -10,6 +10,7 @@ export slicecp!, slicezero!, simheadcp, simheadzero
 export regularity
 export roll!, roll
 export slide!, slide, slidesum!, slidesum, slidemean!, slidemean, slidemax, slidemin, slidemaxmin, sliderange, slidedot!, slidedot, slidedotsym!, slidedotsym, slidedsp!, slidedsp
+public slidedotsym123!, slidedotsym123, slidedotsym12!, slidedotsym12, slidedotsym146!, slidedotsym146
 
 const CHECK = false
 

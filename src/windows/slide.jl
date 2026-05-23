@@ -253,6 +253,67 @@ end
 
 """
 $(TYPEDSIGNATURES)
+Optimized slidedotsym for Epanechnikov kernel (1,2,3,2,1)
+"""
+function slidedotsym123!(y::AbstractVector, x::AbstractVector)
+	@inbounds begin
+		n = length(x)
+		y[1] = (3x[1] + 2x[2] + x[3]) / (3+2+1)
+		y[2] = (2x[1] + 3x[2] + 2x[3] + x[4]) / (2+3+2+1)
+		y[n-1] = (x[n-3] + 2x[n-2] + 3x[n-1] + 2x[n]) / (1+2+3+2)
+		y[n] = (x[n-2] + 2x[n-1] + 3x[n]) / (1+2+3)
+
+		for i=3:n-2
+			y[i] = (x[i-2] + 2x[i-1] + 3x[i] + 2x[i+1] + x[i+2]) / 9
+		end
+	end
+	y
+end
+
+slidedotsym123(x) = slidedotsym123!(similar(x), x)
+
+"""
+$(TYPEDSIGNATURES)
+Optimized slidedotsym for kernel (1,2,1)
+"""
+function slidedotsym12!(y::AbstractVector, x::AbstractVector)
+	@inbounds begin
+		n = length(x)
+		y[1] = (2x[1] + x[2]) / 3
+		y[n] = (x[n-1] + 2x[n]) / 3
+
+		for i=2:n-1
+			y[i] = (x[i-1] + 2x[i] + x[i+1]) / 4
+		end
+	end
+	y
+end
+
+slidedotsym12(x) = slidedotsym12!(similar(x), x)
+
+"""
+$(TYPEDSIGNATURES)
+Optimized slidedotsym for kernel (1,4,6,4,1)
+"""
+function slidedotsym146!(y::AbstractVector, x::AbstractVector)
+	@inbounds begin
+		n = length(x)
+		y[1] = (6x[1] + 4x[2] + x[3]) / (6+4+1)
+		y[2] = (4x[1] + 6x[2] + 4x[3] + x[4]) / (4+6+4+1)
+		y[n-1] = (x[n-3] + 4x[n-2] + 6x[n-1] + 4x[n]) / (1+4+6+4)
+		y[n] = (x[n-2] + 4x[n-1] + 6x[n]) / (1+4+6)
+
+		for i=3:n-2
+			y[i] = (x[i-2] + 4x[i-1] + 6x[i] + 4x[i+1] + x[i+2]) / 16
+		end
+	end
+	y
+end
+
+slidedotsym146(x) = slidedotsym146!(similar(x), x)
+
+"""
+$(TYPEDSIGNATURES)
 Ehlers Generalized Linear DSP Filter (in-place).
 
 ## References
